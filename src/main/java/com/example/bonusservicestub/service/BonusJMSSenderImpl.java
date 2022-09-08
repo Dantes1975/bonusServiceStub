@@ -39,7 +39,7 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
     private String endCardDate;
 
     @Value("${bonus.details.summPoints}")
-    private Integer summPoints;
+    private String summPoints;
 
     @Value("${bonus.response.actual.timestamp}")
     private String actualTimestamp;
@@ -84,28 +84,27 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
     public void sendBonusDetails(BonusDetailsRequest request,
                                  String correlationID,
                                  Long timeToLive,
-                                 String transactionID,
-                                 Queue responseQueue) {
+                                 String transactionID) {
         try {
             QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-            final QueueSender sender = session.createSender(responseQueue);
+            final QueueSender sender = session.createSender(queue);
             final TextMessage textMessage = session.createTextMessage();
             textMessage.setJMSCorrelationID(correlationID);
             textMessage.setStringProperty("X_TransactionID", transactionID);
             final String message = processBonusDetailsMessage();
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
-            log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, responseQueue.getQueueName());
+            log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
             log.error("Error during send message", e);
         }
     }
 
     @Override
-    public void sendAdditionalBonusDetails(String transactionID, Long timeToLive, Queue responseQueue) {
+    public void sendAdditionalBonusDetails(String transactionID, Long timeToLive) {
         try {
             QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-            final QueueSender sender = session.createSender(responseQueue);
+            final QueueSender sender = session.createSender(queue);
             final TextMessage textMessage = session.createTextMessage();
             final String correlationID = generateCorrelationId();
             textMessage.setJMSCorrelationID(correlationID);
@@ -113,7 +112,7 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
             final String message = processBonusDetailsMessage();
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
-            log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, responseQueue.getQueueName());
+            log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
             log.error("Error during send message", e);
         }

@@ -61,6 +61,12 @@ public class BonusHistoryJMSSenderImpl implements BonusHistoryJMSSender {
     @Value("${bonus.history.response.maskNum}")
     private String maskNum;
 
+    @Value("${bonus.history.response.transDateFirst}")
+    private String transDateFirst;
+
+    @Value("${bonus.history.response.transDateSecond}")
+    private String transDateSecond;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Queue queue;
@@ -89,18 +95,17 @@ public class BonusHistoryJMSSenderImpl implements BonusHistoryJMSSender {
     public void sendBonusHistory(BonusHistoryRequest request,
                                  String correlationID,
                                  Long timeToLive,
-                                 String transactionID,
-                                 Queue responseQueue) {
+                                 String transactionID) {
         try {
             QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-            final QueueSender sender = session.createSender(responseQueue);
+            final QueueSender sender = session.createSender(queue);
             final TextMessage textMessage = session.createTextMessage();
             textMessage.setJMSCorrelationID(correlationID);
             textMessage.setStringProperty("X_TransactionID", transactionID);
             final String message = processBonusHistoryMessage();
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
-            log.info("Send bonus history response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, responseQueue.getQueueName());
+            log.info("Send bonus history response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
             log.error("Error during send message", e);
         }
@@ -108,10 +113,10 @@ public class BonusHistoryJMSSenderImpl implements BonusHistoryJMSSender {
     }
 
     @Override
-    public void sendAdditionalBonusHistory(String transactionID, Long timeToLive, Queue responseQueue) {
+    public void sendAdditionalBonusHistory(String transactionID, Long timeToLive) {
         try {
             QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
-            final QueueSender sender = session.createSender(responseQueue);
+            final QueueSender sender = session.createSender(queue);
             final TextMessage textMessage = session.createTextMessage();
             final String correlationID = generateCorrelationId();
             textMessage.setJMSCorrelationID(correlationID);
@@ -119,7 +124,7 @@ public class BonusHistoryJMSSenderImpl implements BonusHistoryJMSSender {
             final String message = processBonusHistoryMessage();
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
-            log.info("Send bonus history response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, responseQueue.getQueueName());
+            log.info("Send bonus history response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
             log.error("Error during send message", e);
         }
@@ -175,8 +180,8 @@ public class BonusHistoryJMSSenderImpl implements BonusHistoryJMSSender {
         BonusHistoryPoint point3 = new BonusHistoryPoint("200", "extend", startDate3, maskNum, new ArrayList<PointDetail>());
 
 
-        point.getDetailList().add(new PointDetail("4829", "TEST DBO 1", "730061", "2020-05-15T13:55:36+03:00", "991002798839", "991002798839"));
-        point1.getDetailList().add(new PointDetail("4830", "TEST DBO 1", "730062", "2020-05-15T13:57:40+03:00", "991002798840", "991002798839"));
+        point.getDetailList().add(new PointDetail("4829", "TEST DBO 1", "730061", transDateFirst, "991002798839", "991002798839"));
+        point1.getDetailList().add(new PointDetail("4830", "TEST DBO 1", "730062", transDateSecond, "991002798840", "991002798839"));
         points.add(point);
         points.add(point1);
         //points.add(point2);

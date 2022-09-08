@@ -94,12 +94,51 @@ public class CardJMSSenderImpl implements CardJMSSender {
             textMessage.setText(message);
             textMessage.setJMSCorrelationID(correlationId);
             textMessage.setStringProperty("X_TransactionID", transactionId);
-            sender.send(textMessage, DeliveryMode.PERSISTENT, 4, 10000);
+            //sender.send(textMessage, DeliveryMode.PERSISTENT, 4, 10000);
+            sender.send(textMessage);
             log.info("P2p card parameters request: JMSCorrelationID={}, X_TransactionID={}, text={} sent to queue={}",
                     correlationId, transactionId, message, queueJndi);
         } catch (Exception e) {
             log.error("Error during send message", e);
         }
+    }
+
+    @Override
+    public void sendAdditionalRequestGuid() {
+        try {
+            RequestGuidMeta meta = new RequestGuidMeta();
+            RequestGuidData data = new RequestGuidData();
+            if (StringUtils.isNotEmpty(guidSystemId)) {
+                meta.setSystemId(guidSystemId);
+            }
+
+            if (StringUtils.isNotEmpty(guidChannel)) {
+                meta.setChannel(guidChannel);
+            }
+
+            String guid = UUID.randomUUID().toString();
+
+            data.setRequestGuid(guid);
+            RequestGuid requestGuid = new RequestGuid();
+            requestGuid.setMeta(meta);
+            requestGuid.setData(data);
+            QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+            final QueueSender sender = session.createSender(queue);
+            final TextMessage textMessage = session.createTextMessage();
+            final String message = convertRequestGuidToString(requestGuid);
+            final String correlationId = generateMessageId();
+            final String transactionId =  generateTransactionId();
+            textMessage.setText(message);
+            textMessage.setJMSCorrelationID(correlationId);
+            textMessage.setStringProperty("X_TransactionID", transactionId);
+            //sender.send(textMessage, DeliveryMode.PERSISTENT, 4, 10000);
+            sender.send(textMessage);
+            log.info("P2p card parameters additional request: JMSCorrelationID={}, X_TransactionID={}, text={} sent to queue={}",
+                    correlationId, transactionId, message, queueJndi);
+        } catch (Exception e) {
+            log.error("Error during send additional message", e);
+        }
+
     }
 
     @PreDestroy

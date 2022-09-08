@@ -1,9 +1,7 @@
 package com.example.bonusservicestub.listener;
 
-import com.example.bonusservicestub.entity.BonusDetailsRequest;
 import com.example.bonusservicestub.entity.BonusHistoryRequest;
 import com.example.bonusservicestub.service.BonusHistoryJMSSender;
-import com.example.bonusservicestub.service.BonusJMSSender;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +14,6 @@ import org.springframework.beans.factory.annotation.Value;
 import javax.annotation.PostConstruct;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.jms.Queue;
 import javax.jms.TextMessage;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -47,9 +44,8 @@ public class BonusHistoryListener implements MessageListener {
                 final String objectMessage = textMessage.getText();
                 final String jmsCorrelationID = textMessage.getJMSCorrelationID();
                 final String transactionID = textMessage.getStringProperty("X_TransactionID");
-                final Queue responseQueue = (Queue) textMessage.getJMSReplyTo();
                 final Long timeToLive = textMessage.getJMSExpiration();
-                log.info("Bonus history request with JMSCorrelationID={}, TTL ={} and ReplyTo={}", jmsCorrelationID, timeToLive, textMessage.getJMSReplyTo().toString());
+                log.info("Bonus history request with JMSCorrelationID={}, TTL ={}", jmsCorrelationID, timeToLive);
                 BonusHistoryRequest bonusHistoryRequest = objectMapper.readValue(objectMessage, BonusHistoryRequest.class);
                     log.info("Bonus history request with text={}", objectMessage);
                     if (answerDelay > 0) {
@@ -59,11 +55,11 @@ public class BonusHistoryListener implements MessageListener {
                             log.error(e.getMessage(), e);
                         }
                     }
-                    bonusJMSSender.sendBonusHistory(bonusHistoryRequest, jmsCorrelationID, timeToLive, transactionID, responseQueue);
-                    //bonusJMSSender.sendAdditionalBonusHistory(transactionID, timeToLive, responseQueue);
+                    bonusJMSSender.sendBonusHistory(bonusHistoryRequest, jmsCorrelationID, timeToLive, transactionID);
+                    bonusJMSSender.sendAdditionalBonusHistory(transactionID, timeToLive);
             }
         } catch (Exception e) {
-            log.error("Exception during updating setting. Message {}", e.getMessage());
+            log.error("Exception during updating setting", e);
         }
     }
 

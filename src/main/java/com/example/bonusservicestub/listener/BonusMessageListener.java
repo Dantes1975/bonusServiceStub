@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import javax.annotation.PostConstruct;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-import javax.jms.Queue;
 import javax.jms.TextMessage;
 
 import static lombok.AccessLevel.PRIVATE;
@@ -47,9 +46,8 @@ public class BonusMessageListener implements MessageListener {
                 final String objectMessage = textMessage.getText();
                 final String jmsCorrelationID = textMessage.getJMSCorrelationID();
                 final String transactionID = textMessage.getStringProperty("X_TransactionID");
-                final Queue responseQueue = (Queue) textMessage.getJMSReplyTo();
                 final Long timeToLive = textMessage.getJMSExpiration();
-                    log.info("Bonus details request with JMSCorrelationID={}, TTL ={} and ReplyTo={}", jmsCorrelationID, timeToLive, textMessage.getJMSReplyTo().toString());
+                    log.info("Bonus details request with JMSCorrelationID={}, TTL ={}", jmsCorrelationID, timeToLive);
                     BonusDetailsRequest bonusDetailsRequest = objectMapper.readValue(objectMessage, BonusDetailsRequest.class);
                     log.info("Bonus details request with text={}", objectMessage);
                     if (answerDelay > 0) {
@@ -59,12 +57,12 @@ public class BonusMessageListener implements MessageListener {
                             log.error(e.getMessage(), e);
                         }
                     }
-                    bonusJMSSender.sendBonusDetails(bonusDetailsRequest, jmsCorrelationID, timeToLive, transactionID, responseQueue);
-                    //bonusJMSSender.sendAdditionalBonusDetails(transactionID, timeToLive, responseQueue);
+                    bonusJMSSender.sendBonusDetails(bonusDetailsRequest, jmsCorrelationID, timeToLive, transactionID);
+                    bonusJMSSender.sendAdditionalBonusDetails(transactionID, timeToLive);
 
             }
         } catch (Exception e) {
-            log.error("Exception during updating setting. Message {}", e.getMessage());
+            log.error("Exception during updating setting", e);
         }
     }
 

@@ -10,8 +10,7 @@ public interface BonusJMSSender {
     void sendBonusDetails(BonusDetailsRequest request,
                           String correlationID,
                           Long timeToLive,
-                          String transactionID,
-                          Queue responseQueue);
+                          String transactionID);
 
-    void sendAdditionalBonusDetails(String transactionID, Long timeToLive, Queue responseQueue);
+    void sendAdditionalBonusDetails(String transactionID, Long timeToLive);
 }

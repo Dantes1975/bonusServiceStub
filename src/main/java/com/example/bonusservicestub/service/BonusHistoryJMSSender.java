@@ -10,8 +10,7 @@ public interface BonusHistoryJMSSender {
     void sendBonusHistory(BonusHistoryRequest request,
                           String correlationID,
                           Long timeToLive,
-                          String transactionID,
-                          Queue responseQueue);
+                          String transactionID);
 
-    void sendAdditionalBonusHistory(String transactionID, Long timeToLive, Queue responseQueue);
+    void sendAdditionalBonusHistory(String transactionID, Long timeToLive);
 }
