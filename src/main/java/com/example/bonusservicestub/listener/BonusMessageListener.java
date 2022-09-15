@@ -1,8 +1,8 @@
 package com.example.bonusservicestub.listener;
 
-import com.example.bonusservicestub.entity.BonusDetailsRequest;
-import com.example.bonusservicestub.entity.BonusHistoryRequest;
-import com.example.bonusservicestub.service.BonusJMSSender;
+import com.example.bonusservicestub.entity.bonus.BonusDetailsRequest;
+import com.example.bonusservicestub.entity.bonus.BonusHistoryRequest;
+import com.example.bonusservicestub.service.bonus.BonusJMSSender;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

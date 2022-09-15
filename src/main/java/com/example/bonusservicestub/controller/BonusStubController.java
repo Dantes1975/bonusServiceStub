@@ -1,9 +1,9 @@
 package com.example.bonusservicestub.controller;
 
-import com.example.bonusservicestub.entity.BankBicPostman;
-import com.example.bonusservicestub.entity.GuidFromPostman;
-import com.example.bonusservicestub.service.BankBicSender;
-import com.example.bonusservicestub.service.CardJMSSender;
+import com.example.bonusservicestub.entity.bic.BankBicPostman;
+import com.example.bonusservicestub.entity.p2p.GuidFromPostman;
+import com.example.bonusservicestub.service.bic.BankBicSender;
+import com.example.bonusservicestub.service.p2p.CardJMSSender;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

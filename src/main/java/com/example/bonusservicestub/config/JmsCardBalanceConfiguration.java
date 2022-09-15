@@ -1,5 +1,6 @@
 package com.example.bonusservicestub.config;
 
+import com.example.bonusservicestub.listener.CardBalanceListener;
 import com.example.bonusservicestub.listener.CardMessageListener;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -23,12 +24,12 @@ import java.util.Properties;
 
 @Configuration
 @Slf4j
-public class JmsCardRequestConfiguration {
+public class JmsCardBalanceConfiguration {
 
     @Value("${ru.bpc.svat.mobilebank.messaging.p2p.cf.jndi}")
     private String connectionFactoryJndi;
 
-    @Value("${ru.bpc.svat.mobilebank.p2p.messaging.queue.request.jndi}")
+    @Value("${ru.bpc.svat.mobilebank.card.balance.queue.request.jndi}")
     private String queueJndi;
 
     @Value("${ru.bpc.svat.mobilebank.messaging.jmsserver.url}")
@@ -48,7 +49,7 @@ public class JmsCardRequestConfiguration {
     }
 
     @Bean
-    public JndiTemplate cardJndiTemplate() {
+    public JndiTemplate cardBalanceJndiTemplate() {
         final JndiTemplate jndiTemplate = new JndiTemplate();
         final Properties environment = new Properties();
         environment.setProperty(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
@@ -64,37 +65,37 @@ public class JmsCardRequestConfiguration {
     }
 
     @Bean
-    public JndiObjectFactoryBean queueCardConnectionFactory() {
-        JndiObjectFactoryBean queueHistoryConnectionFactory = new JndiObjectFactoryBean();
-        queueHistoryConnectionFactory.setJndiTemplate(cardJndiTemplate());
-        queueHistoryConnectionFactory.setJndiName(connectionFactoryJndi);
-        return queueHistoryConnectionFactory;
+    public JndiObjectFactoryBean queueCardBalanceConnectionFactory() {
+        JndiObjectFactoryBean queueBalanceConnectionFactory = new JndiObjectFactoryBean();
+        queueBalanceConnectionFactory.setJndiTemplate(cardBalanceJndiTemplate());
+        queueBalanceConnectionFactory.setJndiName(connectionFactoryJndi);
+        return queueBalanceConnectionFactory;
     }
 
     @Bean
-    public JndiDestinationResolver jmsCardDestinationResolver() {
-        JndiDestinationResolver destResolver = new JndiDestinationResolver();
-        destResolver.setJndiTemplate(cardJndiTemplate());
-        destResolver.setCache(true);
-        return destResolver;
+    public JndiDestinationResolver jmsCardBalanceDestinationResolver() {
+        JndiDestinationResolver balanceDestResolver = new JndiDestinationResolver();
+        balanceDestResolver.setJndiTemplate(cardBalanceJndiTemplate());
+        balanceDestResolver.setCache(true);
+        return balanceDestResolver;
     }
 
     @Bean
-    public JndiObjectFactoryBean jmsCardQueue() {
-        JndiObjectFactoryBean jmsQueue = new JndiObjectFactoryBean();
-        jmsQueue.setJndiTemplate(cardJndiTemplate());
-        jmsQueue.setJndiName(queueJndi);
-        return jmsQueue;
+    public JndiObjectFactoryBean jmsCardBalanceQueue() {
+        JndiObjectFactoryBean jmsBalanceQueue = new JndiObjectFactoryBean();
+        jmsBalanceQueue.setJndiTemplate(cardBalanceJndiTemplate());
+        jmsBalanceQueue.setJndiName(queueJndi);
+        return jmsBalanceQueue;
     }
 
     @Bean
-    public MessageListener queueCardListener() {
-        return new CardMessageListener();
+    public MessageListener queueCardBalanceListener() {
+        return new CardBalanceListener();
     }
 
     @Bean
-    @Qualifier("jmsCardTaskExecutor")
-    public TaskExecutor taskCardExecutor() {
+    @Qualifier("jmsCardBalanceTaskExecutor")
+    public TaskExecutor taskCardBalanceExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(1);
         executor.setMaxPoolSize(1);
@@ -103,14 +104,14 @@ public class JmsCardRequestConfiguration {
     }
 
     @Bean
-    public DefaultMessageListenerContainer messageCardListener(@Qualifier("jmsCardTaskExecutor") TaskExecutor taskExecutor) {
-        DefaultMessageListenerContainer listener = new DefaultMessageListenerContainer();
-        listener.setTaskExecutor(taskExecutor);
-        listener.setConnectionFactory((ConnectionFactory) queueCardConnectionFactory().getObject());
-        listener.setDestination((Destination) jmsCardQueue().getObject());
-        listener.setMessageListener(queueCardListener());
+    public DefaultMessageListenerContainer messageCardBalanceListener(@Qualifier("jmsCardBalanceTaskExecutor") TaskExecutor taskExecutor) {
+        DefaultMessageListenerContainer balanceListener = new DefaultMessageListenerContainer();
+        balanceListener.setTaskExecutor(taskExecutor);
+        balanceListener.setConnectionFactory((ConnectionFactory) queueCardBalanceConnectionFactory().getObject());
+        balanceListener.setDestination((Destination) jmsCardBalanceQueue().getObject());
+        balanceListener.setMessageListener(queueCardBalanceListener());
 
-        return listener;
+        return balanceListener;
     }
 
 }
