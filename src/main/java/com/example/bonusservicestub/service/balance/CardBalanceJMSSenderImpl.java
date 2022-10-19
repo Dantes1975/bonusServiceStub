@@ -123,7 +123,7 @@ public class CardBalanceJMSSenderImpl implements CardBalanceJMSSender {
             final String message = processCardBalanceMessage(request);
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
-            log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
+            log.info("Send card balance response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
             log.error("Error during send message", e);
         }
