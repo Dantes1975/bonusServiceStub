@@ -1,5 +1,6 @@
-package com.example.bonusservicestub.service.bic;
+package com.example.bonusservicestub.service.phone;
 
+import com.example.bonusservicestub.entity.phone.byClientId.*;
 import com.example.bonusservicestub.utils.StubUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,40 +15,31 @@ import javax.annotation.PreDestroy;
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import java.io.*;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 @Service
 @Slf4j
-public class BankBicSenderImpl implements BankBicSender {
+public class GetPhoneByClientIdSenderImpl implements GetPhoneByClientIdSender {
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.cf.jndi}")
+    @Value("${ru.bpc.svat.mobilebank.messaging.bonus.history.cf.jndi}")
     private String connectionFactoryJndi;
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.queue.jndi}")
+    @Value("${ru.bpc.svat.mobilebank.phones.by.client.id.queue.response.jndi}")
     private String queueJndi;
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.jmsserver.url}")
+    @Value("${ru.bpc.svat.mobilebank.messaging.jmsserver.url}")
     private String jmsServerUrl;
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.weblogic.user}")
+    @Value("${ru.bpc.svat.mobilebank.messaging.weblogic.user}")
     private String weblogicUser;
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.weblogic.password}")
+    @Value("${ru.bpc.svat.mobilebank.messaging.weblogic.password}")
     private String weblogicPassword;
 
-    @Value("${ru.bpc.svat.mobilebank.bankBic.filePath}")
+    @Value("${ru.bpc.svat.mobilebank.get.phone.by.client.id.filePath}")
     private String filePath;
-
-    @Value("${ru.bpc.svat.mobilebank.bankBic.enabled}")
-    private boolean isBankBicEnabled;
-
-    @Value("${ru.bpc.svat.mobilebank.bankBic.object.message}")
-    private boolean isObjectMessage;
-
-    @Value("${ru.bpc.svat.mobilebank.bankBic.text.message}")
-    private boolean isTextMessage;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -58,15 +50,6 @@ public class BankBicSenderImpl implements BankBicSender {
     @PostConstruct
     @SneakyThrows
     protected void init() {
-        if (isBankBicEnabled) {
-            initContext();
-            log.info("bank.bic.cf.jndi = {}", connectionFactoryJndi);
-            log.info("bank.bic.topic.jndi = {}", queueJndi);
-            log.info("bank.bic.jmsserver.url = {}", jmsServerUrl);
-        }
-    }
-
-    private void initContext() throws NamingException {
         final Hashtable<String, String> environment = new Hashtable<>();
         environment.put(Context.INITIAL_CONTEXT_FACTORY, "weblogic.jndi.WLInitialContextFactory");
         environment.put(Context.PROVIDER_URL, "t3://" + jmsServerUrl);
@@ -83,34 +66,23 @@ public class BankBicSenderImpl implements BankBicSender {
     }
 
     @Override
-    public void sendBankBic() {
+    public void sendGetPhoneByClientIdResponse(AdditionPhoneGetDetailsRequest request,
+                                               String correlationID,
+                                               Long timeToLive,
+                                               String transactionID) {
         try {
             QueueSession session = getConnection().createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
             final QueueSender sender = session.createSender(queue);
-            final String correlationID = generateCorrelationId();
-            if (isObjectMessage) {
-                final ObjectMessage objectMessage = session.createObjectMessage();
-                File file = new File(filePath);
-                objectMessage.setObject(file);
-                objectMessage.setJMSCorrelationID(correlationID);
-                sender.send(objectMessage);
-                log.info("Send bank BIC object message with JMSCorrelationID ={} to queue={}", correlationID, queue.getQueueName());
-                isTextMessage = false;
-            }
-
-            if (isTextMessage) {
-                final TextMessage textMessage = session.createTextMessage();
-                final String message = StubUtil.getMessageFromFile(filePath);
-                textMessage.setJMSCorrelationID(correlationID);
-                textMessage.setText(message);
-                sender.send(textMessage);
-                log.info("Send bank BIC with JMSCorrelationID ={} to queue={}", correlationID, queue.getQueueName());
-            }
-
+            final TextMessage textMessage = session.createTextMessage();
+            textMessage.setJMSCorrelationID(correlationID);
+            textMessage.setStringProperty("X_TransactionID", transactionID);
+            final String message = StubUtil.getMessageFromFile(filePath);
+            textMessage.setText(message);
+            sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
+            log.info("Send GetPhoneByClientId response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
-            log.error("Error during sending bank BIC message", e);
+            log.error("Error during send message", e);
         }
-
     }
 
     @PreDestroy
@@ -129,10 +101,6 @@ public class BankBicSenderImpl implements BankBicSender {
             connection = factory.createQueueConnection();
         }
         return connection;
-    }
-
-    private String generateCorrelationId() {
-        return StringUtils.leftPad(java.util.UUID.randomUUID().toString().replace("-", ""), 48, "0");
     }
 
 }
