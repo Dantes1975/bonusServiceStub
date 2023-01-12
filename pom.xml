@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.example</groupId>
     <artifactId>bonusServiceStub</artifactId>
-    <version>0.0.20-SNAPSHOT</version>
+    <version>0.0.22-SNAPSHOT</version>
     <name>bonusServiceStub</name>
     <description>bonusServiceStub</description>
     <properties>

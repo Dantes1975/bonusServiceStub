@@ -4,7 +4,7 @@ import com.example.bonusservicestub.entity.bonus.BonusDetailsRequest;
 import com.example.bonusservicestub.entity.bonus.BonusDetailsResponse;
 import com.example.bonusservicestub.entity.bonus.BonusDetailsResponseData;
 import com.example.bonusservicestub.entity.bonus.BonusError;
-import com.example.bonusservicestub.service.bonus.BonusJMSSender;
+import com.example.bonusservicestub.utils.StubUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
@@ -39,26 +39,11 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
     @Value("${ru.bpc.svat.mobilebank.messaging.weblogic.password}")
     private String weblogicPassword;
 
-    @Value("${bonus.details.endCardDate}")
-    private String endCardDate;
+    @Value("${ru.bpc.svat.mobilebank.bonus.details.filePath}")
+    private String filePath;
 
-    @Value("${bonus.details.summPoints}")
-    private String summPoints;
-
-    @Value("${bonus.response.actual.timestamp}")
-    private String actualTimestamp;
-
-    @Value("${bonus.response.error.message}")
-    private String errorMessage;
-
-    @Value("${bonus.response.error.code}")
-    private String errorCode;
-
-    @Value("${bonus.response.error.system.id}")
-    private String errorSystemId;
-
-    @Value("${bonus.response.error}")
-    private Boolean isError;
+    @Value("${bonus.details.response.enabled}")
+    private Boolean isSendEnabled;
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -95,8 +80,12 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
             final TextMessage textMessage = session.createTextMessage();
             textMessage.setJMSCorrelationID(correlationID);
             textMessage.setStringProperty("X_TransactionID", transactionID);
-            final String message = processBonusDetailsMessage();
+            final String message = StubUtil.getMessageFromFile(filePath);
             textMessage.setText(message);
+            if (!isSendEnabled) {
+                log.info("Sending bonus details response disabled");
+                return;
+            }
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
@@ -113,7 +102,7 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
             final String correlationID = generateCorrelationId();
             textMessage.setJMSCorrelationID(correlationID);
             textMessage.setStringProperty("X_TransactionID", transactionID);
-            final String message = processBonusDetailsMessage();
+            final String message = StubUtil.getMessageFromFile(filePath);
             textMessage.setText(message);
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send bonus details response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
@@ -139,38 +128,6 @@ public class BonusJMSSenderImpl implements BonusJMSSender {
             connection = factory.createQueueConnection();
         }
         return connection;
-    }
-
-    private String processBonusDetailsMessage() {
-        BonusDetailsResponseData data = new BonusDetailsResponseData();
-        data.setSummPoints(summPoints);
-        data.setExpDate(endCardDate);
-        BonusDetailsResponse response = new BonusDetailsResponse();
-        response.setActualTimestamp(actualTimestamp);
-        response.setStatus("success");
-        response.setData(data);
-
-        if (isError) {
-            response.setStatus("error");
-            List<BonusError> errors = new ArrayList<>();
-            BonusError error = new BonusError();
-            error.setCode(errorCode);
-            error.setMessage(errorMessage);
-            error.setSystemId(errorSystemId);
-            errors.add(error);
-            response.setErrors(errors);
-        }
-
-        return convertDetailsResponseToString(response);
-    }
-
-    private String convertDetailsResponseToString(BonusDetailsResponse response) {
-        try {
-            return OBJECT_MAPPER.writeValueAsString(response);
-        } catch (Exception e) {
-            log.error("Error while convert response to string");
-        }
-        return StringUtils.EMPTY;
     }
 
     private String generateCorrelationId() {

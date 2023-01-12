@@ -41,6 +41,9 @@ public class GetPhoneByClientIdSenderImpl implements GetPhoneByClientIdSender {
     @Value("${ru.bpc.svat.mobilebank.get.phone.by.client.id.filePath}")
     private String filePath;
 
+    @Value("${get.phone.by.client.id.response.enabled}")
+    private Boolean isSendEnabled;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Queue queue;
@@ -78,6 +81,10 @@ public class GetPhoneByClientIdSenderImpl implements GetPhoneByClientIdSender {
             textMessage.setStringProperty("X_TransactionID", transactionID);
             final String message = StubUtil.getMessageFromFile(filePath);
             textMessage.setText(message);
+            if (!isSendEnabled) {
+                log.info("Sending GetPhoneByClientId response disabled");
+                return;
+            }
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send GetPhoneByClientId response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {

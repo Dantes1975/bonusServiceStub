@@ -84,6 +84,9 @@ public class CardBalanceJMSSenderImpl implements CardBalanceJMSSender {
     @Value("${card.balance.maskNum}")
     private String mackNum;
 
+    @Value("${card.balance.response.enabled}")
+    private Boolean isSendEnabled;
+
     private static final String MAIN_AMOUNT = "mainAmount";
     private static final String CREDIT_AMOUNT = "creditAmount";
     private static final String OWN_FUNDS = "ownFunds";
@@ -122,6 +125,10 @@ public class CardBalanceJMSSenderImpl implements CardBalanceJMSSender {
             textMessage.setJMSCorrelationID(correlationID);
             final String message = processCardBalanceMessage(request);
             textMessage.setText(message);
+            if (!isSendEnabled) {
+                log.info("Sending card balance response disabled");
+                return;
+            }
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send card balance response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {
@@ -143,8 +150,7 @@ public class CardBalanceJMSSenderImpl implements CardBalanceJMSSender {
         response.setStatus(SUCCESS_STATUS);
         response.setData(data);
 
-        if (isError) {
-            response.setStatus(ERROR_STATUS);
+
             List<CreditCardBalanceError> errors = new ArrayList<>();
             CreditCardBalanceError error = new CreditCardBalanceError();
             error.setCode(errorCode);
@@ -152,7 +158,7 @@ public class CardBalanceJMSSenderImpl implements CardBalanceJMSSender {
             error.setSystemId(errorSystemId);
             errors.add(error);
             response.setErrors(errors);
-        }
+
 
 
 

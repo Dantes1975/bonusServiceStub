@@ -41,6 +41,9 @@ public class CardAdditionPhoneSenderImpl implements CardAdditionPhoneSender {
     @Value("${ru.bpc.svat.mobilebank.get.products.by.phone.filePath}")
     private String filePath;
 
+    @Value("${get.products.by.phone.response.enabled}")
+    private Boolean isSendEnabled;
+
     private Queue queue;
     private QueueConnectionFactory factory;
     private QueueConnection connection;
@@ -76,6 +79,10 @@ public class CardAdditionPhoneSenderImpl implements CardAdditionPhoneSender {
             textMessage.setStringProperty("X_TransactionID", transactionID);
             final String message = StubUtil.getMessageFromFile(filePath);
             textMessage.setText(message);
+            if (!isSendEnabled) {
+                log.info("Sending GetProductsByPhone response disabled");
+                return;
+            }
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send GetProductsByPhone response with JMSCorrelationID ={} and text={}", correlationID, message);
         } catch (Exception e) {

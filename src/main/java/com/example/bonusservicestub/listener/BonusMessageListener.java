@@ -58,7 +58,7 @@ public class BonusMessageListener implements MessageListener {
                         }
                     }
                     bonusJMSSender.sendBonusDetails(bonusDetailsRequest, jmsCorrelationID, timeToLive, transactionID);
-                    bonusJMSSender.sendAdditionalBonusDetails(transactionID, timeToLive);
+                    //bonusJMSSender.sendAdditionalBonusDetails(transactionID, timeToLive);
 
             }
         } catch (Exception e) {

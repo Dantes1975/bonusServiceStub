@@ -39,7 +39,7 @@ public class CardAdditionPhoneListener implements MessageListener {
                 final String jmsCorrelationID = textMessage.getJMSCorrelationID();
                 final String transactionID = textMessage.getStringProperty("X_TransactionID");
                 final Long timeToLive = textMessage.getJMSExpiration();
-                log.info("GetPhoneByClientId request: JMSCorrelationID={}, X_TransactionID={}, text={}",
+                log.info("GetProductsByPhone request: JMSCorrelationID={}, X_TransactionID={}, text={}",
                         jmsCorrelationID, transactionID, objectMessage);
                 CardAdditionPhoneDetailsRequest request = objectMapper.readValue(objectMessage, CardAdditionPhoneDetailsRequest.class);
                 sender.sendCardAdditionPhoneDetailsResponse(request, jmsCorrelationID, timeToLive, transactionID);

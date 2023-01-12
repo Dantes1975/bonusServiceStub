@@ -56,7 +56,7 @@ public class BonusHistoryListener implements MessageListener {
                         }
                     }
                     bonusJMSSender.sendBonusHistory(bonusHistoryRequest, jmsCorrelationID, timeToLive, transactionID);
-                    bonusJMSSender.sendAdditionalBonusHistory(transactionID, timeToLive);
+                    //bonusJMSSender.sendAdditionalBonusHistory(transactionID, timeToLive);
             }
         } catch (Exception e) {
             log.error("Exception during updating setting", e);

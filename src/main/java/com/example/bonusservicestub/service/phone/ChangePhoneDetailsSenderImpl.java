@@ -54,6 +54,9 @@ public class ChangePhoneDetailsSenderImpl implements ChangePhoneDetailsSender {
     @Value("${ru.bpc.svat.mobilebank.phone.delete.filePath}")
     private String filePathDelete;
 
+    @Value("${change.phone.details.response.enabled}")
+    private Boolean isSendEnabled;
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private Queue queue;
@@ -109,6 +112,10 @@ public class ChangePhoneDetailsSenderImpl implements ChangePhoneDetailsSender {
             }
 
             textMessage.setText(message);
+            if (!isSendEnabled) {
+                log.info("Sending ChangePhoneDetails response disabled by setting");
+                return;
+            }
             sender.send(textMessage, DeliveryMode.PERSISTENT, 4, timeToLive);
             log.info("Send ChangePhoneDetails response with JMSCorrelationID ={} and text={} to queue={}", correlationID, message, queue.getQueueName());
         } catch (Exception e) {

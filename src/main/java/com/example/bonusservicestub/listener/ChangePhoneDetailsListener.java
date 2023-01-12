@@ -38,7 +38,7 @@ public class ChangePhoneDetailsListener implements MessageListener {
                 final String jmsCorrelationID = textMessage.getJMSCorrelationID();
                 final String transactionID = textMessage.getStringProperty("X_TransactionID");
                 final Long timeToLive = textMessage.getJMSExpiration();
-                log.info("GetPhoneByClientId request: JMSCorrelationID={}, X_TransactionID={}, text={}",
+                log.info("ChangePhoneDetails request: JMSCorrelationID={}, X_TransactionID={}, text={}",
                         jmsCorrelationID, transactionID, objectMessage);
                 ChangePhoneDetailsRequest request = objectMapper.readValue(objectMessage, ChangePhoneDetailsRequest.class);
                 sender.sendChangePhoneDetailsResponse(request, jmsCorrelationID, timeToLive, transactionID);
